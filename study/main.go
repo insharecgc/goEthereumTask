@@ -54,7 +54,7 @@ func main() {
 	// transferERC20()
     // transferERC721()
     // queryERC20Info()
-    // subscribeHead()
+    subscribeHead()
 }
 
 // 查询区块信息
@@ -520,7 +520,7 @@ func subscribeHead() {
 			fmt.Println("new block time:", header.Time)
 			fmt.Println("new block nonce:", header.Nonce)
 			// 获取区块信息
-			block, err := client.BlockByHash(context.Background(), header.Hash())
+			block, err := client.BlockByNumber(context.Background(), header.Number)
 			if err != nil {
 				log.Fatal(err)
 			}
