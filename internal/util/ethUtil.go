@@ -14,6 +14,24 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+// sepolia测试网infura下http方式的Client
+func GetHttpClient(infuraKey string) (*ethclient.Client, error) {
+	client, err := ethclient.Dial("https://sepolia.infura.io/v3/" + infuraKey)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+// sepolia测试网infura下webSocket方式的Client
+func GetWSSClient(infuraKey string) (*ethclient.Client, error) {
+	client, err := ethclient.Dial("wss://sepolia.infura.io/ws/v3/" + infuraKey)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
 func SendNewTransaction(
 	client *ethclient.Client,
 	privateKey *ecdsa.PrivateKey,
@@ -69,7 +87,7 @@ func SendNewTransaction(
 	return signedTx, nil
 }
 
-func waitForReceipt(client *ethclient.Client, txHash common.Hash) (*types.Receipt, error) {
+func WaitForReceipt(client *ethclient.Client, txHash common.Hash) (*types.Receipt, error) {
 	for {
 		receipt, err := client.TransactionReceipt(context.Background(), txHash)
 		if err == nil {
@@ -79,6 +97,6 @@ func waitForReceipt(client *ethclient.Client, txHash common.Hash) (*types.Receip
 			return nil, err
 		}
 		// 等待一段时间后再次查询
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 }

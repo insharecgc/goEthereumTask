@@ -22,3 +22,17 @@ go install github.com/ethereum/go-ethereum/cmd/abigen@latest
 ```shell
 abigen --bin=contracts_Store_sol_Store.bin --abi=contracts_Store_sol_Store.abi --pkg=store --out=./study/store/store.go
 ```
+
+# ---------------------------------------TASK--------------------------------------
+
+## 任务1下第二个任务：
+### 先把 Counter.sol 生成abi和bin文件
+```shell
+solcjs --abi --bin ./contracts/Counter.sol
+```
+生成好后，把这两个abi和bin修改为 Counter.abi 和 Counter.bin
+
+### 可以通过 go generate 代码生成工具，生成go代码文件
+```shell
+go generate ./internal/contractbindings/...
+```

@@ -1,14 +1,15 @@
 package main
 
 import (
-    "github.com/insharecgc/goEthereumTask/util"
 	"context"
 	"crypto/ecdsa"
 	"fmt"
 	"log"
-    "math"
+	"math"
 	"math/big"
 	"time"
+
+	"github.com/insharecgc/goEthereumTask/internal/util"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -16,32 +17,16 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/crypto/sha3"
 
-    token "github.com/insharecgc/goEthereumTask/study/erc20"
-    "github.com/insharecgc/goEthereumTask/study/erc721"
+	token "github.com/insharecgc/goEthereumTask/study/erc20"
+	"github.com/insharecgc/goEthereumTask/study/erc721"
 )
 
 const infuraKey = "d56339e6f6a0412ea3ae3710fe72f198"
-var testPrivateKey, _ = crypto.HexToECDSA("you secret key")
 
-func getHttpClient() *ethclient.Client {
-	client, err := ethclient.Dial("https://sepolia.infura.io/v3/"+infuraKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return client
-}
-
-func getWsClient() *ethclient.Client {
-	client, err := ethclient.Dial("wss://sepolia.infura.io/ws/v3/"+infuraKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return client
-}
+var testPrivateKey, _ = crypto.HexToECDSA("your secret key")
 
 func main() {
 	// queryBlock()
@@ -49,17 +34,16 @@ func main() {
 	// queryReceipt()
 	// createCrypto()
 	// transferETH()
-    // utilTransferEth()
-	
+	// utilTransferEth()
 	// transferERC20()
-    // transferERC721()
-    // queryERC20Info()
-    subscribeHead()
+	// transferERC721()
+	// queryERC20Info()
+	subscribeHead()
 }
 
 // 查询区块信息
 func queryBlock() {
-	client := getHttpClient()
+	client, _ := util.GetHttpClient(infuraKey)
 	blockNumber := big.NewInt(5671744)
 
 	header, err := client.HeaderByNumber(context.Background(), blockNumber)
@@ -83,7 +67,7 @@ func queryBlock() {
 
 // 查询交易信息
 func queryTx() {
-	client := getHttpClient()
+	client, _ := util.GetHttpClient(infuraKey)
 
 	chainID, err := client.ChainID(context.Background())
 	if err != nil {
@@ -136,7 +120,7 @@ func queryTx() {
 
 // 查询收据信息
 func queryReceipt() {
-	client := getHttpClient()
+	client, _ := util.GetHttpClient(infuraKey)
 	// 根据区域信息，查询收据信息（区块下每一个交易的收据信息）
 	blockHash := common.HexToHash("0xae713dea1419ac72b928ebe6ba9915cd4fc1ef125a606f90f5e783c47cb1a4b5")
 	recepitByHash, err := client.BlockReceipts(context.Background(), rpc.BlockNumberOrHashWithHash(blockHash, false))
@@ -194,7 +178,7 @@ func createCrypto() {
 }
 
 func queryRevertReason(txHash common.Hash) {
-	client := getHttpClient()
+	client, _ := util.GetHttpClient(infuraKey)
 	receipt, err := client.TransactionReceipt(context.Background(), txHash)
 	if err != nil {
 		log.Fatal(err)
@@ -213,28 +197,28 @@ func queryRevertReason(txHash common.Hash) {
 
 // 调用util封装的交易函数
 func utilTransferEth() {
-    client := getHttpClient()
+	client, _ := util.GetHttpClient(infuraKey)
 	privateKey := testPrivateKey
-    toAddress := common.HexToAddress("0x0405d109770350d2a26bd7874525945106e306cb")
-    value := big.NewInt(1 * 1e15) // 转0.001个ETH in wei (0.001 eth 15个0)
-    gasLimit := uint64(40000)     // in units
-    var data []byte
-    signedTx, err := util.SendNewTransaction(client, privateKey, toAddress, value, gasLimit, data)
-    if err != nil {
+	toAddress := common.HexToAddress("0x0405d109770350d2a26bd7874525945106e306cb")
+	value := big.NewInt(1 * 1e15) // 转0.001个ETH in wei (0.001 eth 15个0)
+	gasLimit := uint64(40000)     // in units
+	var data []byte
+	signedTx, err := util.SendNewTransaction(client, privateKey, toAddress, value, gasLimit, data)
+	if err != nil {
 		log.Fatal(err)
 	}
-    // 打印交易hash
+	// 打印交易hash
 	fmt.Println("tx hash: ", signedTx.Hash().Hex())
 }
 
 // ETH 转账
 func transferETH() {
-	client := getHttpClient()
+	client, _ := util.GetHttpClient(infuraKey)
 	privateKey := testPrivateKey
-    toAddress := common.HexToAddress("0x0405d109770350d2a26bd7874525945106e306cb")
-    value := big.NewInt(1 * 1e16) // in wei (0.01 eth 16个0)
-    gasLimit := uint64(21000)     // in units
-    var data []byte
+	toAddress := common.HexToAddress("0x0405d109770350d2a26bd7874525945106e306cb")
+	value := big.NewInt(1 * 1e16) // in wei (0.01 eth 16个0)
+	gasLimit := uint64(21000)     // in units
+	var data []byte
 	// 1. 构造交易
 	// 私钥
 	// 私钥拿公钥地址
@@ -246,13 +230,13 @@ func transferETH() {
 	// 发送方地址
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 	fmt.Println("fromAddress:", fromAddress)
-    // 查询账户余额
-	fromBalance, err := client.BalanceAt(context.Background(), fromAddress, nil)    // nil 表示最新的一个区块
+	// 查询账户余额
+	fromBalance, err := client.BalanceAt(context.Background(), fromAddress, nil) // nil 表示最新的一个区块
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("fromBalance:", fromBalance)
-    fbalance := new(big.Float)
+	fbalance := new(big.Float)
 	fbalance.SetString(fromBalance.String())
 	ethValue := new(big.Float).Quo(fbalance, big.NewFloat(1e18))
 	fmt.Println("fromBalance(eth):", ethValue)
@@ -265,7 +249,7 @@ func transferETH() {
 	if err != nil {
 		log.Fatal(err)
 	}
-		
+
 	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data)
 	chainId, err := client.NetworkID(context.Background())
 	if err != nil {
@@ -326,7 +310,7 @@ func ERC20Transfer(to common.Address, amount *big.Int) []byte {
 // transferERC20 函数实现ERC20代币转账功能
 func transferERC20() {
 	// 创建以太坊客户端
-	client := getHttpClient()
+	client, _ := util.GetHttpClient(infuraKey)
 	tokenAddress := common.HexToAddress("0x1890491cd06bB4de1b74286AC0b704C1241E9c63") // ERC20代币合约地址
 
 	// 私钥
@@ -397,11 +381,11 @@ func erc721EncodeSafeTransferFrom(from, to common.Address, tokenId *big.Int) []b
 // transferERC721 函数实现ERC721代币转账功能
 func transferERC721() {
 	// 创建以太坊客户端
-	client := getHttpClient()
+	client, _ := util.GetHttpClient(infuraKey)
 	tokenAddress := common.HexToAddress("0x4E8Ef74A824d4ef1C83D7c231c4bed5f4a0a6115") // ERC721代币合约地址
 
 	// 私钥
-    privateKey := testPrivateKey
+	privateKey := testPrivateKey
 	// 私钥拿公钥地址
 	fromAddress := crypto.PubkeyToAddress(privateKey.PublicKey)
 	fmt.Println("fromAddress:", fromAddress)
@@ -409,52 +393,52 @@ func transferERC721() {
 	if err != nil {
 		log.Fatal(err)
 	}
-    
+
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
-        log.Fatal(err)
+		log.Fatal(err)
 	}
 	toAddress := common.HexToAddress("0xcc0089b3882bfff3f476d506160c580cf28d9242")
-    tokenId := big.NewInt(0)
-    // 估算gasLimit
-    gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
-        From: fromAddress,
+	tokenId := big.NewInt(0)
+	// 估算gasLimit
+	gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
+		From: fromAddress,
 		To:   &tokenAddress,
 		Data: erc721EncodeSafeTransferFrom(fromAddress, toAddress, tokenId),
-    })
+	})
 	if err != nil {
-	    log.Printf("估算 gas 失败，使用默认值: %v", err)
+		log.Printf("估算 gas 失败，使用默认值: %v", err)
 		gasLimit = 100000 // 手动设置默认值
 	}
 
-    // 签名交易
-    chainId, err := client.NetworkID(context.Background())
+	// 签名交易
+	chainId, err := client.NetworkID(context.Background())
 	// 构造交易
-    opts := &bind.TransactOpts{
+	opts := &bind.TransactOpts{
 		From:     fromAddress,
 		Nonce:    big.NewInt(int64(nonce)),
 		GasLimit: gasLimit,
 		GasPrice: gasPrice,
-		Signer:   func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
+		Signer: func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 			// 用私钥签名交易（需匹配链 ID）
 			return types.SignTx(tx, types.NewEIP155Signer(chainId), privateKey)
 		},
-    }
-    // 初始化nft实例合约
-    nft, err := erc721.NewErc721(tokenAddress, client)
-    // 调用合约方法转nft
-    tx, err := nft.TransferFrom(opts, fromAddress, toAddress, tokenId)
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println("NFT交易已提交, tx hash: ", tx.Hash().Hex())
+	}
+	// 初始化nft实例合约
+	nft, err := erc721.NewErc721(tokenAddress, client)
+	// 调用合约方法转nft
+	tx, err := nft.TransferFrom(opts, fromAddress, toAddress, tokenId)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("NFT交易已提交, tx hash: ", tx.Hash().Hex())
 
 }
 
 // 查询ERC20代币信息
 func queryERC20Info() {
 	// 创建以太坊客户端
-	client := getHttpClient()
+	client, _ := util.GetHttpClient(infuraKey)
 	tokenAddress := common.HexToAddress("0x1890491cd06bB4de1b74286AC0b704C1241E9c63") // ERC20代币合约地址
 
 	// 获取合约实例
@@ -463,47 +447,47 @@ func queryERC20Info() {
 		log.Fatal(err)
 	}
 
-    address := common.HexToAddress("0xcc0089b3882bfff3f476d506160c580cf28d9242")
-    balance, err := contract.BalanceOf(&bind.CallOpts{}, address)
+	address := common.HexToAddress("0xcc0089b3882bfff3f476d506160c580cf28d9242")
+	balance, err := contract.BalanceOf(&bind.CallOpts{}, address)
 	if err != nil {
 		log.Fatal(err)
 	}
-    name, err := contract.Name(&bind.CallOpts{})
+	name, err := contract.Name(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
 	}
-    symbol, err := contract.Symbol(&bind.CallOpts{})
+	symbol, err := contract.Symbol(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
 	}
-    decimals, err := contract.Decimals(&bind.CallOpts{})
+	decimals, err := contract.Decimals(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
 	}
-    totalSupply, err := contract.TotalSupply(&bind.CallOpts{})
+	totalSupply, err := contract.TotalSupply(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-    fmt.Println("name:", name, "symbol:", symbol)
-    fmt.Printf("decimals:%v\n", decimals)
-    fmt.Printf("balance wei:%s\n", balance)
-    fBalance := new(big.Float)
-    fBalance.SetString(balance.String())
-    value := new(big.Float).Quo(fBalance, big.NewFloat(math.Pow10(int(decimals))))
-    fmt.Printf("balance:%f\n", value)
-    
-    fmt.Printf("totalSupply wei:%s\n", totalSupply)
-    fTotalSupply := new(big.Float)
-    fTotalSupply.SetString(totalSupply.String())
-    value = new(big.Float).Quo(fTotalSupply, big.NewFloat(math.Pow10(int(decimals))))
-    fmt.Printf("totalSupply:%f\n", value)
+	fmt.Println("name:", name, "symbol:", symbol)
+	fmt.Printf("decimals:%v\n", decimals)
+	fmt.Printf("balance wei:%s\n", balance)
+	fBalance := new(big.Float)
+	fBalance.SetString(balance.String())
+	value := new(big.Float).Quo(fBalance, big.NewFloat(math.Pow10(int(decimals))))
+	fmt.Printf("balance:%f\n", value)
+
+	fmt.Printf("totalSupply wei:%s\n", totalSupply)
+	fTotalSupply := new(big.Float)
+	fTotalSupply.SetString(totalSupply.String())
+	value = new(big.Float).Quo(fTotalSupply, big.NewFloat(math.Pow10(int(decimals))))
+	fmt.Printf("totalSupply:%f\n", value)
 
 }
 
 // 订阅区块
 func subscribeHead() {
-	client := getWsClient()
+	client, _ := util.GetWSSClient(infuraKey)
 	// 订阅区块
 	headers := make(chan *types.Header)
 	sub, err := client.SubscribeNewHead(context.Background(), headers)
@@ -512,9 +496,9 @@ func subscribeHead() {
 	}
 	for {
 		select {
-		case err := <- sub.Err():
+		case err := <-sub.Err():
 			log.Fatal(err)
-		case header := <- headers:
+		case header := <-headers:
 			fmt.Println("new block hash:", header.Hash().Hex())
 			fmt.Println("new block number:", header.Number.Uint64())
 			fmt.Println("new block time:", header.Time)
@@ -524,14 +508,14 @@ func subscribeHead() {
 			if err != nil {
 				log.Fatal(err)
 			}
-            fmt.Println("block number:", block.Number().Uint64())
-            fmt.Println("block hash:", block.Hash().Hex())
-            fmt.Println("block time:", block.Time())
-            fmt.Println("block nonce:", block.Nonce())
-            fmt.Println("block len:", block.Transactions().Len())
-            fmt.Println("block size:", block.Size())
-            fmt.Println("block gas limit:", block.GasLimit())
-            fmt.Println("block gas used:", block.GasUsed())
+			fmt.Println("block number:", block.Number().Uint64())
+			fmt.Println("block hash:", block.Hash().Hex())
+			fmt.Println("block time:", block.Time())
+			fmt.Println("block nonce:", block.Nonce())
+			fmt.Println("block len:", block.Transactions().Len())
+			fmt.Println("block size:", block.Size())
+			fmt.Println("block gas limit:", block.GasLimit())
+			fmt.Println("block gas used:", block.GasUsed())
 		}
-    }
+	}
 }
